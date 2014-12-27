@@ -39,6 +39,14 @@ set(${MODULE_PREFIX}_SUN_SRCS
 	keyboard_sun.c
 	keyboard_sun.h)
 
+set(${MODULE_PREFIX}_THINLINC_SRCS
+	keyboard_thinlinc.c
+	keyboard_thinlinc.h
+	${BISON_ThinLincParser_OUTPUT_SOURCE}
+	${BISON_ThinLincParser_OUTPUT_HEADER}
+	${FLEX_ThinLincScanner_OUTPUTS}
+	)
+
 if(CMAKE_SYSTEM_NAME MATCHES Solaris)
 	set(WITH_SUN true)
 endif()
@@ -52,6 +60,17 @@ if(WITH_X11)
 	if(WITH_SUN)
 		freerdp_definition_add(-DWITH_SUN)
 		set(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} ${${MODULE_PREFIX}_SUN_SRCS})
+	endif()
+
+	if(WITH_THINLINC)
+		find_package(BISON REQUIRED)
+		find_package(FLEX REQUIRED)
+
+		BISON_TARGET(ThinLincParser keyboard_thinlinc_parser.y keyboard_thinlinc_parser.c VERBOSE bison.log)
+		FLEX_TARGET(ThinLincScanner keyboard_thinlinc_lexer.l keyboard_thinlinc_lexer.c)
+		ADD_FLEX_BISON_DEPENDENCY(ThinLincScanner ThinLincParser)
+		set(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} ${${MODULE_PREFIX}_THINLINC_SRCS})
+		freerdp_library_add(${FLEX_LIBRARIES} ${BISON_LIBRARIES})
 	endif()
 
 	set(XKBFILE_FEATURE_TYPE "RECOMMENDED")

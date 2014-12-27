@@ -58,5 +58,6 @@ UINT32 xf_keyboard_get_toggle_keys_state(xfContext* xfc);
 void xf_keyboard_focus_in(xfContext* xfc);
 BOOL xf_keyboard_handle_special_keys(xfContext* xfc, KeySym keysym);
 void xf_keyboard_set_indicators(rdpContext* context, UINT16 led_flags);
+int xk_keyboard_get_modifier_keys(xfContext* xfc, XF_MODIFIER_KEYS* mod);
 
 #endif /* __XF_KEYBOARD_H */

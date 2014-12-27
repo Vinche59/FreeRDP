@@ -237,6 +237,7 @@
 FREERDP_API DWORD freerdp_get_system_locale_id(void);
 FREERDP_API const char* freerdp_get_system_locale_name_from_id(DWORD localeId);
 FREERDP_API int freerdp_detect_keyboard_layout_from_system_locale(DWORD* keyboardLayoutId);
+FREERDP_API int freerdp_detect_keyboard_layout_from_system_locale_thinlinc(DWORD* keyboardLayoutId, char **locale);
 
 #ifdef __cplusplus
  }
