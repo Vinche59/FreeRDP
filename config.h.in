@@ -14,6 +14,8 @@
 #define CMAKE_SHARED_LIBRARY_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}"
 #define CMAKE_SHARED_LIBRARY_PREFIX  "${CMAKE_SHARED_LIBRARY_PREFIX}"
 
+#define THINLINC_KEYMAPS_DIRS "${THINLINC_KEYMAPS_DIR}"
+
 /* Include files */
 #cmakedefine HAVE_FCNTL_H
 #cmakedefine HAVE_UNISTD_H
@@ -53,6 +55,7 @@
 #cmakedefine WITH_IOSAUDIO
 #cmakedefine WITH_OPENSLES
 #cmakedefine WITH_GSM
+#cmakedefine WITH_THINLINC
 
 /* Plugins */
 #cmakedefine STATIC_CHANNELS
@@ -91,4 +94,5 @@
 #cmakedefine WITH_DEBUG_X11_LOCAL_MOVESIZE
 #cmakedefine WITH_DEBUG_XV
 #cmakedefine WITH_DEBUG_ANDROID_JNI
+#cmakedefine WITH_DEBUG_THINLINC
 #endif

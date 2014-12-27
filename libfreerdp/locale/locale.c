@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 
 #include <winpr/crt.h>
@@ -715,6 +716,124 @@ const char* freerdp_get_system_locale_name_from_id(DWORD localeId)
 	}
 
 	return NULL;
+}
+
+char *toLower(char *s)
+{
+	int l = strlen(s);
+	char *str = calloc(l + 1, sizeof(char));
+	int i = 0;
+
+	if (!str)
+		return NULL;
+
+	for (i = 0; i < l; i++)
+		str[i] = tolower(s[i]);
+	str[l] = '\0';
+
+	return str;
+}
+
+int localetoThinlincKeymapName(SYSTEM_LOCALE* locale, char **loc)
+{
+	char *str = NULL;
+
+	*loc = calloc(strlen(locale->language) + strlen(locale->country) + 2, sizeof(char));
+	if (!(*loc))
+		return 0;
+	str=toLower(locale->language);
+	if(!str)
+	{
+		free(*loc);
+		*loc = NULL;
+		return 0;
+	}
+	*loc = strcpy(*loc, str);
+	free(str);
+	*loc = strcat(*loc, "-");
+	str=toLower(locale->country);
+	if(!str)
+	{
+		free(*loc);
+		*loc = NULL;
+		return 0;
+	}
+	*loc = strcat(*loc, str);
+	free(str);
+
+	return 1;
+}
+
+int freerdp_detect_keyboard_layout_from_system_locale_thinlinc(DWORD* keyboardLayoutId, char **loc)
+{
+	int i, j;
+	char language[4];
+	char country[10];
+	SYSTEM_LOCALE* locale;
+
+
+	freerdp_get_system_language_and_country_codes(language, country);
+
+	if ((strcmp(language, "C") == 0) || (strcmp(language, "POSIX") == 0))
+	{
+		*keyboardLayoutId = ENGLISH_UNITED_STATES; /* U.S. Keyboard Layout */
+		*loc = calloc(6, sizeof(char));
+		if (*loc)
+			strcpy(*loc, "en-us");
+		return 0;
+	}
+
+	locale = freerdp_detect_system_locale();
+
+	if (!locale)
+		return -1;
+
+	if (!localetoThinlincKeymapName(locale, loc))
+		return -1;
+
+	DEBUG_KBD("Found locale : %s_%s", locale->language, locale->country);
+
+	for (i = 0; i < ARRAYSIZE(LOCALE_KEYBOARD_LAYOUTS_TABLE); i++)
+	{
+		if (LOCALE_KEYBOARD_LAYOUTS_TABLE[i].locale == locale->code)
+		{
+			/* Locale found in list of default keyboard layouts */
+
+			for (j = 0; j < 5; j++)
+			{
+				if (LOCALE_KEYBOARD_LAYOUTS_TABLE[i].keyboardLayouts[j] == ENGLISH_UNITED_STATES)
+				{
+					continue; /* Skip, try to get a more localized keyboard layout */
+				}
+				else if (LOCALE_KEYBOARD_LAYOUTS_TABLE[i].keyboardLayouts[j] == 0)
+				{
+					break; /* No more keyboard layouts */
+				}
+				else
+				{
+					*keyboardLayoutId = LOCALE_KEYBOARD_LAYOUTS_TABLE[i].keyboardLayouts[j];
+					return 0;
+				}
+			}
+
+			/*
+			 * If we skip the ENGLISH_UNITED_STATES keyboard layout but there are no
+			 * other possible keyboard layout for the locale, we end up here with k > 1
+			 */
+
+			if (j >= 1)
+			{
+				*keyboardLayoutId = ENGLISH_UNITED_STATES;
+				return 0;
+			}
+			else
+			{
+				return -1;
+			}
+		}
+	}
+
+	return -1; /* Could not detect the current keyboard layout from locale */
 }
 
 int freerdp_detect_keyboard_layout_from_system_locale(DWORD* keyboardLayoutId)
