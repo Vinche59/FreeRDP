@@ -42,9 +42,7 @@ set(${MODULE_PREFIX}_SUN_SRCS
 set(${MODULE_PREFIX}_THINLINC_SRCS
 	keyboard_thinlinc.c
 	keyboard_thinlinc.h
-	${BISON_ThinLincParser_OUTPUT_SOURCE}
-	${BISON_ThinLincParser_OUTPUT_HEADER}
-	${FLEX_ThinLincScanner_OUTPUTS}
+	locale.c
 	)
 
 if(CMAKE_SYSTEM_NAME MATCHES Solaris)
@@ -65,12 +63,17 @@ if(WITH_X11)
 	if(WITH_THINLINC)
 		find_package(BISON REQUIRED)
 		find_package(FLEX REQUIRED)
-
-		BISON_TARGET(ThinLincParser keyboard_thinlinc_parser.y keyboard_thinlinc_parser.c VERBOSE bison.log)
-		FLEX_TARGET(ThinLincScanner keyboard_thinlinc_lexer.l keyboard_thinlinc_lexer.c)
-		ADD_FLEX_BISON_DEPENDENCY(ThinLincScanner ThinLincParser)
-		set(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} ${${MODULE_PREFIX}_THINLINC_SRCS})
-		freerdp_library_add(${FLEX_LIBRARIES} ${BISON_LIBRARIES})
+		find_package(Judy REQUIRED)
+		include_directories(${CMAKE_CURRENT_BINARY_DIR})
+		include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+		bison_target(tlparser keyboard_thinlinc_parser.y ${CMAKE_CURRENT_BINARY_DIR}/keyboard_thinlinc_parser.c)
+		flex_target(tlscanner keyboard_thinlinc_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/keyboard_thinlinc_lexer.c)
+		ADD_FLEX_BISON_DEPENDENCY(tlscanner tlparser)
+		add_library(thinlinc STATIC ${${MODULE_PREFIX}_THINLINC_SRCS} ${FLEX_tlscanner_OUTPUTS} ${BISON_tlparser_OUTPUTS})
+		target_link_libraries(thinlinc ${FLEX_LIBRARIES} ${BISON_LIBRARIES} ${JUDY_LIBRARY} ${X11_LIBRARIES})
+		set_target_properties(thinlinc PROPERTIES COMPILE_DEFINITIONS "HAVE_CONFIG_H")
+		freerdp_library_add(thinlinc)
+		install(TARGETS thinlinc DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries EXPORT FreeRDPTargets)
 	endif()
 
 	set(XKBFILE_FEATURE_TYPE "RECOMMENDED")

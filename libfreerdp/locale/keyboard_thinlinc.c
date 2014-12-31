@@ -20,46 +20,76 @@
 #include <Judy.h>
 #include <freerdp/locale/locale.h>
 #include <freerdp/scancode.h>
+#include "keyboard_thinlinc_parser.h"
 #include "keyboard_thinlinc.h"
 #include "liblocale.h"
-#include "keyboard_thinlinc_parser.h"
 
-tlkeymap *keymaps = NULL;
+Pvoid_t  keymaps = (Pvoid_t) NULL;
+extern FILE* yyin;
 
-void push_keysym(char *name, tlkeymap **head, UINT32 keysym, DWORD rpdscancode, UINT32 modifiers)
+void thinlinc_add_keys(char *keyname, DWORD rdp_scancode, UINT32 modifiers)
 {
-	tlkeymap *node = calloc(1, sizeof(tlkeymap));
-	if (node) {
-		node->name = name;
-		node->keysym = keysym;
-		node->rdpscancode = rpdscancode;
-		node->modifiers = modifiers;
-		node->next = *head;
-		*head = node;
+	int rc_int = 0;
+	Word_t index = XStringToKeysym(keyname);
+	// TODO IF != NoSymbol
+	DEBUG_THINLINC("Add new key : %s", keyname);
+	if (keymaps != NULL)
+	{
+		JLD(rc_int, keymaps, index);
+		if (rc_int == JERR)
+		{
+			free(keyname);
+			ERROR_THINLINC("Error while removing index %i from keymaps array", index);
+			return;
+		}
 	}
+
+	tlkeymap *newkey = calloc(1, sizeof(struct list_keymap));
+	if (!newkey)
+	{
+		ERROR_THINLINC("Error while allocating newkey");
+		free(keyname);
+		return;
+	}
+	newkey->keysym = index;
+	newkey->modifiers = modifiers;
+	newkey->rdpscancode = rdp_scancode;
+	JLI(newkey, keymaps, index);
+	if (newkey == PJERR)
+	{
+		ERROR_THINLINC("Error while inserting index %i from keymaps array", index);
+	}
+	free(keyname);
 }
 
 int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId)
 {
 	char *locale = NULL;
+	tlkeymap *iter = NULL;
+	Word_t index = -1;
 
 	freerdp_detect_keyboard_layout_from_system_locale_thinlinc(keyboardLayoutId, &locale);
 	if (locale != NULL) {
 		DEBUG_THINLINC("Locale found : %s", locale);
-		keymaps = calloc(1, sizeof (tlkeymap));
-		keymaps->name = "eacute";
-		keymaps->keysym = 0x00e9;
-		keymaps->rdpscancode = 0x03;
-		keymaps->modifiers = 0;
-		keymaps->next = NULL;
 
-		push_keysym("ampersand", &keymaps, 0x0026, 0x02, 0);
-		push_keysym("LShift", &keymaps, 0xffe1, 0x2a, 0);
-		push_keysym("1",&keymaps,0x0031, 0x02, SHIFT_MODIFIER);
-		push_keysym("bar", &keymaps, 0x007c, 0x02, ALTGR_MODIFIER);
-		push_keysym("exclamdown", &keymaps, 0x00a1, 0x02, SHIFT_MODIFIER | ALTGR_MODIFIER);
-
-		free(locale);
+		yyin = fopen("/opt/thinlinc/share/rdesktop/keymaps/fr-be", "r");
+		if (!yyin)
+		{
+			free(locale);
+			ERROR_THINLINC("Error while opening keymaps file");
+			return -1;
+		}
+		else
+		{
+			yyparse();
+			JLF(iter, keymaps, index);
+			while (iter != NULL)
+			{
+				printf("KeySym : 0x%08x - Modifiers : 0x%08x - RDP ScanCode : 0x%08x\n", iter->keysym, iter->modifiers, iter->rdpscancode);
+				JLN(iter, keymaps, index);
+			}
+			free(locale);
+		}
 	}
 	else
 		return -1;
@@ -69,13 +99,6 @@ int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId)
 
 tlkeymap *freerdp_keyboard_get_rdp_scancode_from_thinlinc(KeySym keysym)
 {
-	tlkeymap *curr = keymaps;
-	while (curr)
-	{
-		if (curr->keysym == keysym)
-			return curr;
-		curr = curr->next;
-	}
 	return NULL;
 }
 

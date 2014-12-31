@@ -16,12 +16,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * %output  "keyboard_thinlinc_parser.c"
- * %defines "keyboard_thinlinc_parser.h"
  */
- 
 #include "keyboard_thinlinc.h"
-#include "keyboard_thinlinc_lexer.h"
 #include "keyboard_thinlinc_parser.h"
 #include <stdio.h>
 
@@ -32,18 +28,18 @@ int yyerror(const char *s);
 %}
 
 %define parse.error verbose
- 
+%locations
 %union {
-	int value;
-	char *keysym;
+	unsigned int uiVal;
+	char *str;
 }
  
 %token KEYS_KEYSYM
 %token KEYS_SCANCODE
 %token KEYS_MODIFIERS
 
-%type <keysym> KEYS_KEYSYM 
-%type <value> KEYS_SCANCODE KEYS_MODIFIERS
+%type <str> KEYS_KEYSYM 
+%type <uiVal> KEYS_SCANCODE KEYS_MODIFIERS
 
 %start keymaps
 %%
@@ -53,8 +49,8 @@ keymaps: keys;
 keys : key
 	| keys key;
 	
-key: KEYS_KEYSYM KEYS_SCANCODE { printf("KeySym : %s - ScanCode : 0x%08x\n", $1, $2); }
-	| KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { printf("KeySym : %s - ScanCode : 0x%08x - Modifiers : 0x%08x\n", $1, $2, $3); }
+key: KEYS_KEYSYM KEYS_SCANCODE { thinlinc_add_keys($1, $2, 0); }
+	| KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { thinlinc_add_keys($1, $2, $3); }
 	;
 	
 
@@ -62,6 +58,6 @@ key: KEYS_KEYSYM KEYS_SCANCODE { printf("KeySym : %s - ScanCode : 0x%08x\n", $1,
 
 int yyerror(const char *msg)
 {
-	fprintf(stderr, "Error:%s\n", msg);
-	return 0;
+	ERROR_THINLINC("ThinLinc Keymaps Parser error : %s", msg);
+	return -1;
 }
