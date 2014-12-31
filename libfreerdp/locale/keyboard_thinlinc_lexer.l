@@ -18,9 +18,6 @@
  * limitations under the License.
  * 
  */
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include <stdio.h>
 #include "keyboard_thinlinc.h"
 #include "keyboard_thinlinc_parser.h"
@@ -29,7 +26,8 @@ unsigned int modifiers;
 void setModifiers(unsigned int *modifiers, char *str);
 %}
 
-%option outfile="keyboard_thinlinc_lexer.c" header-file="keyboard_thinlinc_lexer.h"
+%option noinput
+%option nounput
 
 %x KEYS
 %x SEQUENCE
@@ -39,25 +37,38 @@ void setModifiers(unsigned int *modifiers, char *str);
 ^include					{ BEGIN(INCLUDE); }
 <INCLUDE>[[:space:]]+		{ /* skip spaces */ }
 <INCLUDE>[^[:space:]\n]+	{ 
-								char buf[1024];
-								strcat(buf, THINLINC_KEYMAPS_DIRS);
-								yyin = fopen(strcat(buf, yytext), "r");
-								if (!yyin) {
-									ERROR_THINLINC("Unknow keymaps file : %s", buf);
+								char *path = calloc(strlen(THINLINC_KEYMAPS_DIRS) + strlen(yytext) + 3, sizeof(char));
+								if (!path) 
+								{
+									ERROR_THINLINC("Error while allocating buffer");
+									return -1;
 								}
-								buf[0] = '\0';
+								strcpy(path, THINLINC_KEYMAPS_DIRS);
+								ERROR_THINLINC("Path : %s", path);
+								strcat(path, "/");
+								ERROR_THINLINC("Path : %s", path);
+								strcat(path, yytext);
+								ERROR_THINLINC("Path : %s", path);
+								yyin = fopen(path, "r");
+								if (!yyin) 
+								{
+									ERROR_THINLINC("Unknow keymaps file : --%s--", path);
+									free(path);
+									return -1;
+								}
+								free(path);
 								yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
 								BEGIN(INITIAL);
 							}
 ^map.*\n	 			{ /* Skip map for the moment */ }
 ^sequence.*\n			{ /* Skip sequence for the moment */ }
-^[[:alnum:]_]+			{ BEGIN(KEYS); modifiers = 0; yylval.keysym = strdup(yytext); return KEYS_KEYSYM; }
+^[[:alnum:]_]+			{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); return KEYS_KEYSYM; }
 <KEYS>[[:space:]]+		{ /* skip spaces */ }
-<KEYS>0x[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.value); return KEYS_SCANCODE; }
-<KEYS>0x[[:alnum:]]+	{ sscanf(yytext, "%i", &yylval.value); return KEYS_SCANCODE; }
+<KEYS>0x[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
+<KEYS>0x[[:alnum:]]+	{ sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
 <KEYS>[[:alpha:]]+		{ setModifiers(&modifiers, yytext); }
-<KEYS>[[:alpha:]]+$		{ BEGIN(INITIAL); setModifiers(&modifiers, yytext); yylval.value = modifiers; return KEYS_MODIFIERS; }
-.						{ /* ignore erreur */ }
+<KEYS>[[:alpha:]]+$		{ BEGIN(INITIAL); setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; return KEYS_MODIFIERS; }
+.						{ return (int) yytext[0]; }
 <<EOF>>					{ 
 							yypop_buffer_state();
 							if (!YY_CURRENT_BUFFER)

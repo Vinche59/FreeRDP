@@ -24,9 +24,11 @@
 #include "config.h"
 #endif
 
+#define JUDYERROR_NOTEST 1
+#include <Judy.h>
 #include <freerdp/types.h>
 #include <X11/Xlib.h>
-#include "client/X11/xfreerdp.h"
+#include <freerdp/log.h>
 
 #define THINLINC_TAG FREERDP_TAG("thinlinc")
 
@@ -46,16 +48,15 @@
 
 struct list_keymap
 {
-	char *name;
 	UINT32 keysym;
-	DWORD rdpscancode;
 	UINT32 modifiers;
-	struct list_keymap *next;
+	DWORD rdpscancode;
 };
 
 typedef struct list_keymap tlkeymap;
 
 int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId);
+void thinlinc_add_keys(char *keyname, DWORD rdp_scancode, UINT32 modifiers);
 tlkeymap *freerdp_keyboard_get_rdp_scancode_from_thinlinc(KeySym keysym);
 
 #endif /* KEYBOARD_THINLINC_H_ */

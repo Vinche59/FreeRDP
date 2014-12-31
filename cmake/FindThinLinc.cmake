@@ -24,16 +24,8 @@
 # limitations under the License.
 #=============================================================================
 
-#find_package(Judy REQUIRED)
-#find_package(BISON REQUIRED)
-#find_package(FLEX REQUIRED)
-
-#BISON_TARGET(ThinLincParser keyboard_thinlinc_parser.y keyboard_thinlinc_parser.c VERBOSE /tmp/bison.tmp)
-#FLEX_TARGET(ThinLincScanner keyboard_thinlinc_lexer.l keyboard_thinlinc_lexer.c)
-#ADD_FLEX_BISON_DEPENDENCY(ThinLincScanner ThinLincParser)
-
-find_path(THINLINC_KEYMAPS_DIR NAMES keymaps
-	  PATHS /opt/thinlinc/share/rdesktop
+find_path(THINLINC_KEYMAPS_DIR NAMES common
+	  PATHS /opt/thinlinc/share/rdesktop/keymaps/
           DOC "Thinlinc keymaps directory"
 )
 
@@ -41,7 +33,6 @@ include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(ThinLinc DEFAULT_MSG THINLINC_KEYMAPS_DIR)
 
 if(THINLINC_FOUND)
-  set( THINLINC_KEYMAPS_DIRS ${THINLINC_KEYMAPS_DIR} )	
+  set( THINLINC_KEYMAPS_DIRS ${THINLINC_KEYMAPS_DIR})
 endif()
 mark_as_advanced(THINLINC_KEYMAPS_DIR)
-

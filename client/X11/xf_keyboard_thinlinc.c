@@ -18,8 +18,8 @@
  */
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
-#include <winpr/include/winpr/wtypes.h>
-#include <libfreerdp/locale/keyboard_thinlinc.h>
+#include <winpr/wtypes.h>
+#include <locale/keyboard_thinlinc.h>
 #include "xfreerdp.h"
 #include "xf_keyboard.h"
 #include "xf_keyboard_thinlinc.h"
@@ -64,7 +64,7 @@ void xf_keyboard_send_key_thinlinc(xfContext *xfc, BOOL down, KeySym keysym)
 			freerdp_input_send_keyboard_event_ex(input, TRUE, RDP_SCANCODE_RMENU);
 		}
 
-		DEBUG_THINLINC("xf_keyboard_send_key_thinlinc : name : %s - scancode : 0x%08x - keysym : 0x%08x", keymap->name, keymap->rdpscancode, keymap->keysym);
+		//DEBUG_THINLINC("xf_keyboard_send_key_thinlinc : name : %s - scancode : 0x%08x - keysym : 0x%08x", keymap->name, keymap->rdpscancode, keymap->keysym);
 		freerdp_input_send_keyboard_event_ex(input, down, keymap->rdpscancode);
 
 		if (simulatedKeys)
