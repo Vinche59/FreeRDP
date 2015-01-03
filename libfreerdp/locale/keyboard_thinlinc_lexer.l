@@ -33,22 +33,16 @@ void setModifiers(unsigned int *modifiers, char *str);
 %x SEQUENCE
 %x INCLUDE
 %%
-^#.*\n					{ /* Skip comments */ }
-^include					{ BEGIN(INCLUDE); }
+^[[:space:]]				{ /* Skip space beginning of line */ }
+#.*\n						{ /* Skip comments */ }
+include						{ BEGIN(INCLUDE); }
 <INCLUDE>[[:space:]]+		{ /* skip spaces */ }
 <INCLUDE>[^[:space:]\n]+	{ 
-								char *path = calloc(strlen(THINLINC_KEYMAPS_DIRS) + strlen(yytext) + 3, sizeof(char));
+								char *path = thinlinc_get_keymaps_path(yytext);
 								if (!path) 
 								{
-									ERROR_THINLINC("Error while allocating buffer");
 									return -1;
 								}
-								strcpy(path, THINLINC_KEYMAPS_DIRS);
-								ERROR_THINLINC("Path : %s", path);
-								strcat(path, "/");
-								ERROR_THINLINC("Path : %s", path);
-								strcat(path, yytext);
-								ERROR_THINLINC("Path : %s", path);
 								yyin = fopen(path, "r");
 								if (!yyin) 
 								{
@@ -60,25 +54,33 @@ void setModifiers(unsigned int *modifiers, char *str);
 								yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
 								BEGIN(INITIAL);
 							}
-^map.*\n	 			{ /* Skip map for the moment */ }
-^sequence.*\n			{ /* Skip sequence for the moment */ }
-^[[:alnum:]_]+			{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); return KEYS_KEYSYM; }
-<KEYS>[[:space:]]+		{ /* skip spaces */ }
-<KEYS>0x[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
-<KEYS>0x[[:alnum:]]+	{ sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
-<KEYS>[[:alpha:]]+		{ setModifiers(&modifiers, yytext); }
-<KEYS>[[:alpha:]]+$		{ BEGIN(INITIAL); setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; return KEYS_MODIFIERS; }
-.						{ return (int) yytext[0]; }
-<<EOF>>					{ 
-							yypop_buffer_state();
-							if (!YY_CURRENT_BUFFER)
-								yyterminate(); 
-						}
+map.*\n	 					{ /* Skip map for the moment */ }
+sequence.*\n				{ /* Skip sequence for the moment */ }
+^[[:alnum:]_]+				{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); return KEYS_KEYSYM; }
+<KEYS>[[:space:]]+			{ /* skip spaces */ }
+<KEYS>0x[[:alnum:]]+$		{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
+<KEYS>0x[[:alnum:]]+		{ sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
+<KEYS>[[:alpha:]]+			{ setModifiers(&modifiers, yytext); }
+<KEYS>[[:alpha:]]+$			{ BEGIN(INITIAL); setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; return KEYS_MODIFIERS; }
+<KEYS>\n					{ /* skip newline */ }
+<KEYS>.						{ /* skip unknown */ }
+\n							{ /* skip newline */ }
+.							{ /* skip unknown */ }
+<<EOF>>						{
+								yypop_buffer_state();
+								if (!YY_CURRENT_BUFFER)
+									yyterminate();
+							}
 %%
 
 void setModifiers(unsigned int *modifiers, char *str)
 {
-	if (strcmp(str, "shift") == 0 || strcmp(str, "addupper") == 0)
+	if (strcmp(str, "addupper") == 0)
+	{
+		*modifiers |= ADDUPPER_MODIFIER;
+		return;
+	}
+	if (strcmp(str, "shift") == 0)
 	{
 		*modifiers |= SHIFT_MODIFIER;
 		return;

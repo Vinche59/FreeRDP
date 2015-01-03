@@ -1,13 +1,6 @@
 # - Find ThinLinc
-# Find ThinLinc keymaps directory
+# Find ThinLinc Environment
 #
-#  This module defines the following variables:
-#     THINLINC_FOUND        - true if THINLINC_KEYMAPS_DIR is found
-#     THINLINC_KEYMAPS_DIRS - Set when THINLINC_KEYMAPS_DIR is found
-#
-#     THINLINC_KEYMAPS_DIR  - where to find keymaps
-#
-
 #=============================================================================
 # Copyright 2014 Vincent Sourin <sourin-v@bridgestone-bae.com>
 #
@@ -24,15 +17,12 @@
 # limitations under the License.
 #=============================================================================
 
-find_path(THINLINC_KEYMAPS_DIR NAMES common
-	  PATHS /opt/thinlinc/share/rdesktop/keymaps/
+find_path(THINLINC_DIR NAMES tl-config
+	PATHS $ENV{TL_PREFIX}/bin/
           DOC "Thinlinc keymaps directory"
 )
 
+set(THINLINC_MSG "Thinlinc Install directory not found")
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(ThinLinc DEFAULT_MSG THINLINC_KEYMAPS_DIR)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(ThinLinc THINLINC_MSG THINLINC_DIR)
 
-if(THINLINC_FOUND)
-  set( THINLINC_KEYMAPS_DIRS ${THINLINC_KEYMAPS_DIR})
-endif()
-mark_as_advanced(THINLINC_KEYMAPS_DIR)

@@ -38,6 +38,7 @@
 
 #ifdef WITH_THINLINC
 #include "xf_keyboard_thinlinc.h"
+extern BOOL thinlincKeyboardReady;
 #endif
 
 #define TAG CLIENT_TAG("x11")
@@ -484,7 +485,10 @@ static BOOL xf_event_KeyPress(xfContext* xfc, XEvent* event, BOOL app)
 	XLookupString((XKeyEvent*) event, str, sizeof(str), &keysym, NULL);
 
 #ifdef WITH_THINLINC
-	xf_keyboard_key_press_thinlinc(xfc, event->xkey.keycode, keysym);
+	if (thinlincKeyboardReady)
+		xf_keyboard_key_press_thinlinc(xfc, event->xkey.keycode, keysym);
+	else
+		xf_keyboard_key_press(xfc, event->xkey.keycode, keysym);
 #else
 	xf_keyboard_key_press(xfc, event->xkey.keycode, keysym);
 #endif
@@ -509,10 +513,15 @@ static BOOL xf_event_KeyRelease(xfContext* xfc, XEvent* event, BOOL app)
 	}
 
 #ifdef WITH_THINLINC
-	KeySym keysym;
-	char str[256];
-	XLookupString((XKeyEvent*) event, str, sizeof(str), &keysym, NULL);
-	xf_keyboard_key_release_thinlinc(xfc, event->xkey.keycode, keysym);
+	if (thinlincKeyboardReady)
+	{
+		KeySym keysym;
+		char str[256];
+		XLookupString((XKeyEvent*) event, str, sizeof(str), &keysym, NULL);
+		xf_keyboard_key_release_thinlinc(xfc, event->xkey.keycode, keysym);
+	}
+	else
+		xf_keyboard_key_release(xfc, event->xkey.keycode);
 #else
 	xf_keyboard_key_release(xfc, event->xkey.keycode);
 #endif
