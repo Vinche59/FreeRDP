@@ -29,6 +29,7 @@
 #include <freerdp/types.h>
 #include <X11/Xlib.h>
 #include <freerdp/log.h>
+#include <winpr/environment.h>
 
 #define THINLINC_TAG FREERDP_TAG("thinlinc")
 
@@ -40,23 +41,35 @@
 #define DEBUG_THINLINC(fmt, ...) do { } while (0)
 #endif
 
+
 #define SHIFT_MODIFIER 0x00000001
 #define ALTGR_MODIFIER 0x00000010
 #define LOCALSTATE_MODIFIER 0x00000100
-#define NUMLOCK_MODIFIER 0x00001000
+#define NUMLOCK_MODIFIER 0x0001000
 #define INHIBIT_MODIFIER 0x00010000
+#define ADDUPPER_MODIFIER 0x00100000
+
 
 struct list_keymap
 {
 	UINT32 keysym;
 	UINT32 modifiers;
 	DWORD rdpscancode;
+#ifdef WITH_DEBUG_THINLINC
+	char  *keyname;
+#endif
 };
 
 typedef struct list_keymap tlkeymap;
 
 int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId);
-void thinlinc_add_keys(char *keyname, DWORD rdp_scancode, UINT32 modifiers);
+int thinlinc_add_keys(char *keyname, DWORD rdp_scancode, UINT32 modifiers);
 tlkeymap *freerdp_keyboard_get_rdp_scancode_from_thinlinc(KeySym keysym);
+char *thinlinc_get_keymaps_path(char *p);
+UINT32 thinlinc_get_remote_modifiers_state();
+void thinlinc_set_remote_modifiers_state(UINT32 remote_state);
+void thinlinc_remove_remote_modifiers_state(UINT32 remote_state);
+void thinlinc_set_saved_remote_modifiers_state();
+UINT32 thinlinc_get_saved_remote_modifiers_state();
 
 #endif /* KEYBOARD_THINLINC_H_ */

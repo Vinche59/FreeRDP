@@ -37,6 +37,9 @@ int yyerror(const char *s);
 %token KEYS_KEYSYM
 %token KEYS_SCANCODE
 %token KEYS_MODIFIERS
+%token MAP
+%token SEQUENCE
+%token INVALID
 
 %type <str> KEYS_KEYSYM 
 %type <uiVal> KEYS_SCANCODE KEYS_MODIFIERS
@@ -49,8 +52,8 @@ keymaps: keys;
 keys : key
 	| keys key;
 	
-key: KEYS_KEYSYM KEYS_SCANCODE { thinlinc_add_keys($1, $2, 0); }
-	| KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { thinlinc_add_keys($1, $2, $3); }
+key: KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { thinlinc_add_keys($1, $2, $3); }
+	| KEYS_KEYSYM KEYS_SCANCODE { thinlinc_add_keys($1, $2, 0); }
 	;
 	
 

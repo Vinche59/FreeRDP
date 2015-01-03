@@ -113,10 +113,13 @@ DWORD freerdp_keyboard_init(DWORD keyboardLayoutId)
 
 #ifdef WITH_THINLINC
 	if (status < 0)
+	{
 		if ((status = freerdp_keyboard_init_thinlinc(&keyboardLayoutId)) > 0)
 			return keyboardLayoutId;
+		else
+			ERROR_THINLINC("Error during initialization of keyboard. Revert to \"Standard\" FreeRDP detection.\n Keyboard may not be fully functionnal.");
+	}
 #endif
-
 
 #ifdef WITH_XKBFILE
 	if (status < 0)
