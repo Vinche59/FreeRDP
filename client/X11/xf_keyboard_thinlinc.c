@@ -56,14 +56,14 @@ void thinlinc_update_remote_modifiers_state(UINT32 keysym, BOOL keyPressed)
 	{
 	case XK_Shift_L:
 	case XK_Shift_R:
-		DEBUG_THINLINC("Remote Modifier State Before = 0x%08x", thinlinc_get_remote_modifiers_state());
+		DEBUG_THINLINC("Remote Modifier State Before = 0x%x", thinlinc_get_remote_modifiers_state());
 		keyPressed ? thinlinc_set_remote_modifiers_state(SHIFT_MODIFIER) : thinlinc_remove_remote_modifiers_state(SHIFT_MODIFIER);
-		DEBUG_THINLINC("Remote Modifier State After = 0x%08x", thinlinc_get_remote_modifiers_state());
+		DEBUG_THINLINC("Remote Modifier State After = 0x%x", thinlinc_get_remote_modifiers_state());
 		break;
 	case XK_Alt_R:
-		DEBUG_THINLINC("Remote Modifier State Before = 0x%08x", thinlinc_get_remote_modifiers_state());
+		DEBUG_THINLINC("Remote Modifier State Before = 0x%x", thinlinc_get_remote_modifiers_state());
 		keyPressed ? thinlinc_set_remote_modifiers_state(ALTGR_MODIFIER) : thinlinc_remove_remote_modifiers_state(ALTGR_MODIFIER);
-		DEBUG_THINLINC("Remote Modifier State After = 0x%08x", thinlinc_get_remote_modifiers_state());
+		DEBUG_THINLINC("Remote Modifier State After = 0x%x", thinlinc_get_remote_modifiers_state());
 		break;
 	case XK_Num_Lock:
 		if (keyPressed) {
@@ -76,11 +76,14 @@ void thinlinc_update_remote_modifiers_state(UINT32 keysym, BOOL keyPressed)
 	}
 }
 
-void thinlinc_send_keyboard_event(rdpInput *input, BOOL down, UINT32 keysym, UINT32 rdp_scancode)
+void thinlinc_send_keyboard_event(rdpInput *input, BOOL down, UINT32 keysym, BYTE rdp_scancode)
 {
 	thinlinc_update_remote_modifiers_state(keysym, down);
-	freerdp_input_send_keyboard_event_ex(input, down, rdp_scancode);
-	DEBUG_THINLINC("freerdp_input_send_keyboard_event_ex : send %s for keysym = 0x%08x", down ? "KEY_PRESSED" : "KEY_RELEASED", keysym);
+	freerdp_input_send_keyboard_event(input,
+				(THINLINC_RDP_SCANCODE_EXTENDED(rdp_scancode) ? KBD_FLAGS_EXTENDED : 0) |
+				((down) ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
+				RDP_SCANCODE_CODE(rdp_scancode));
+	DEBUG_THINLINC("freerdp_input_send_keyboard_event_ex : send %s for keysym = 0x%x", down ? "KEY_PRESSED" : "KEY_RELEASED", keysym);
 }
 
 
@@ -129,11 +132,11 @@ void thinlinc_handle_remote_modifiers_state(xfContext *xfc, UINT32 keysym, UINT3
 	{
 		if (modifiers & ALTGR_MODIFIER)
 		{
-			thinlinc_send_keyboard_event(input, TRUE, 0xffea, RDP_SCANCODE_RMENU);
+			thinlinc_send_keyboard_event(input, TRUE, 0xffea, RDP_SCANCODE_ALTGR);
 		}
 		else
 		{
-			thinlinc_send_keyboard_event(input, FALSE, 0xffea, RDP_SCANCODE_RMENU);
+			thinlinc_send_keyboard_event(input, FALSE, 0xffea, RDP_SCANCODE_ALTGR);
 		}
 	}
 }
@@ -147,7 +150,7 @@ void xf_keyboard_send_key_thinlinc(xfContext *xfc, BOOL down, KeySym keysym)
 
 	keymap = freerdp_keyboard_get_rdp_scancode_from_thinlinc(keysym);
 
-	DEBUG_THINLINC("Send %s : keyname = %s - keysym = 0x%08x - Scancode = 0x%08x - Modifiers = 0x%08x // Remote Modifiers = 0x%08x", down ? "KEY_PRESSED":"KEY_RELEASED", keymap->keyname, keymap->keysym, keymap->rdpscancode, keymap->modifiers, thinlinc_get_remote_modifiers_state());
+	DEBUG_THINLINC("Send %s : keyname = %s - keysym = 0x%x - Scancode = 0x%x - Modifiers = 0x%x // Remote Modifiers = 0x%x", down ? "KEY_PRESSED":"KEY_RELEASED", keymap->keyname, keymap->keysym, keymap->rdpscancode, keymap->modifiers, thinlinc_get_remote_modifiers_state());
 
 	if (!keymap || keymap->rdpscancode == RDP_SCANCODE_UNKNOWN || (keymap->modifiers & INHIBIT_MODIFIER))
 	{

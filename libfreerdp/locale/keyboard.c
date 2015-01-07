@@ -117,7 +117,7 @@ DWORD freerdp_keyboard_init(DWORD keyboardLayoutId)
 		if ((status = freerdp_keyboard_init_thinlinc(&keyboardLayoutId)) > 0)
 			return keyboardLayoutId;
 		else
-			ERROR_THINLINC("Error during initialization of keyboard. Revert to \"Standard\" FreeRDP detection.\n Keyboard may not be fully functionnal.");
+			ERROR_THINLINC("Error during initialization of keyboard. Revert to \"Standard\" FreeRDP detection. Keyboard may not be fully functionnal.");
 	}
 #endif
 

@@ -20,6 +20,10 @@
 #ifndef XF_KEYBOARD_THINLINC_H_
 #define XF_KEYBOARD_THINLINC_H_
 
+#define THINLINC_EXTENDED 0x80
+#define THINLINC_RDP_SCANCODE_EXTENDED(_rdp_scancode) (((_rdp_scancode) & THINLINC_EXTENDED) ? TRUE : FALSE)
+#define RDP_SCANCODE_ALTGR (THINLINC_EXTENDED | 0x38)
+
 void xf_keyboard_key_press_thinlinc(xfContext* xfc, BYTE keycode, KeySym keysym);
 void xf_keyboard_key_release_thinlinc(xfContext* xfc, BYTE keycode, KeySym keysym);
 

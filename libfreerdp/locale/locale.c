@@ -734,106 +734,56 @@ char *toLower(char *s)
 	return str;
 }
 
-int localetoThinlincKeymapName(SYSTEM_LOCALE* locale, char **loc)
+char *locale_to_thinlinc_keymapName(SYSTEM_LOCALE* locale)
 {
 	char *str = NULL;
+	char *loc = NULL;
 
-	*loc = calloc(strlen(locale->language) + strlen(locale->country) + 2, sizeof(char));
-	if (!(*loc))
-		return 0;
+	if (!locale)
+		return NULL;
+
+	loc = calloc(strlen(locale->language) + strlen(locale->country) + 2, sizeof(char));
+	if (!loc)
+		return NULL;
 	str=toLower(locale->language);
 	if(!str)
 	{
-		free(*loc);
-		*loc = NULL;
-		return 0;
+		free(loc);
+		return NULL;
 	}
-	*loc = strcpy(*loc, str);
+	loc = strcpy(loc, str);
 	free(str);
-	*loc = strcat(*loc, "-");
+	loc = strcat(loc, "-");
 	str=toLower(locale->country);
 	if(!str)
 	{
-		free(*loc);
-		*loc = NULL;
-		return 0;
+		free(loc);
+		return NULL;
 	}
-	*loc = strcat(*loc, str);
+	loc = strcat(loc, str);
 	free(str);
 
-	return 1;
+	return loc;
 }
 
-int freerdp_detect_keyboard_layout_from_system_locale_thinlinc(DWORD* keyboardLayoutId, char **loc)
+char *freerdp_get_system_locale_thinlinc()
 {
-	int i, j;
 	char language[4];
 	char country[10];
-	SYSTEM_LOCALE* locale;
-
+	char *loc = NULL;
 
 	freerdp_get_system_language_and_country_codes(language, country);
 
 	if ((strcmp(language, "C") == 0) || (strcmp(language, "POSIX") == 0))
 	{
-		*keyboardLayoutId = ENGLISH_UNITED_STATES; /* U.S. Keyboard Layout */
-		*loc = calloc(6, sizeof(char));
-		if (*loc)
-			strcpy(*loc, "en-us");
-		return 0;
+		loc = calloc(6, sizeof(char));
+		if (!loc)
+			return NULL;
+		strcpy(loc, "en-us");
+		return loc;
 	}
 
-	locale = freerdp_detect_system_locale();
-
-	if (!locale)
-		return -1;
-
-	if (!localetoThinlincKeymapName(locale, loc))
-		return -1;
-
-	DEBUG_KBD("Found locale : %s_%s", locale->language, locale->country);
-
-	for (i = 0; i < ARRAYSIZE(LOCALE_KEYBOARD_LAYOUTS_TABLE); i++)
-	{
-		if (LOCALE_KEYBOARD_LAYOUTS_TABLE[i].locale == locale->code)
-		{
-			/* Locale found in list of default keyboard layouts */
-
-			for (j = 0; j < 5; j++)
-			{
-				if (LOCALE_KEYBOARD_LAYOUTS_TABLE[i].keyboardLayouts[j] == ENGLISH_UNITED_STATES)
-				{
-					continue; /* Skip, try to get a more localized keyboard layout */
-				}
-				else if (LOCALE_KEYBOARD_LAYOUTS_TABLE[i].keyboardLayouts[j] == 0)
-				{
-					break; /* No more keyboard layouts */
-				}
-				else
-				{
-					*keyboardLayoutId = LOCALE_KEYBOARD_LAYOUTS_TABLE[i].keyboardLayouts[j];
-					return 0;
-				}
-			}
-
-			/*
-			 * If we skip the ENGLISH_UNITED_STATES keyboard layout but there are no
-			 * other possible keyboard layout for the locale, we end up here with k > 1
-			 */
-
-			if (j >= 1)
-			{
-				*keyboardLayoutId = ENGLISH_UNITED_STATES;
-				return 0;
-			}
-			else
-			{
-				return -1;
-			}
-		}
-	}
-
-	return -1; /* Could not detect the current keyboard layout from locale */
+	return locale_to_thinlinc_keymapName(freerdp_detect_system_locale());
 }
 
 int freerdp_detect_keyboard_layout_from_system_locale(DWORD* keyboardLayoutId)

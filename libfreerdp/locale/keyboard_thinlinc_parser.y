@@ -22,11 +22,12 @@
 #include <stdio.h>
 
 extern int yylex();
-
-int yyerror(const char *s);
+extern int yylineno;
+int yyerror(DWORD *keyboardLayoutId, const char *s);
 
 %}
 
+%parse-param {DWORD *keyboardLayoutId}
 %define parse.error verbose
 %locations
 %union {
@@ -37,30 +38,27 @@ int yyerror(const char *s);
 %token KEYS_KEYSYM
 %token KEYS_SCANCODE
 %token KEYS_MODIFIERS
-%token MAP
-%token SEQUENCE
-%token INVALID
+%token LAYOUT
 
 %type <str> KEYS_KEYSYM 
-%type <uiVal> KEYS_SCANCODE KEYS_MODIFIERS
+%type <uiVal> KEYS_SCANCODE KEYS_MODIFIERS LAYOUT
 
-%start keymaps
+%start keymap
 %%
 
-keymaps: keys;
+keymap : key
+	| keymap key
+	;
 
-keys : key
-	| keys key;
-	
-key: KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { thinlinc_add_keys($1, $2, $3); }
+key: LAYOUT { thinlinc_set_keyboard_layout($1, keyboardLayoutId); }
+	| KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { thinlinc_add_keys($1, $2, $3); }
 	| KEYS_KEYSYM KEYS_SCANCODE { thinlinc_add_keys($1, $2, 0); }
 	;
-	
 
 %%
 
-int yyerror(const char *msg)
+int yyerror(DWORD *keyboardLayoutId, const char *msg)
 {
-	ERROR_THINLINC("ThinLinc Keymaps Parser error : %s", msg);
+	ERROR_THINLINC("Error near line #%i : %s", yylineno, msg);
 	return -1;
 }

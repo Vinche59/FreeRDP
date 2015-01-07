@@ -28,10 +28,12 @@ void setModifiers(unsigned int *modifiers, char *str);
 
 %option noinput
 %option nounput
+%option yylineno
 
 %x KEYS
 %x SEQUENCE
 %x INCLUDE
+%x MAP
 %%
 ^[[:space:]]				{ /* Skip space beginning of line */ }
 #.*\n						{ /* Skip comments */ }
@@ -46,28 +48,31 @@ include						{ BEGIN(INCLUDE); }
 								yyin = fopen(path, "r");
 								if (!yyin) 
 								{
-									ERROR_THINLINC("Unknow keymaps file : --%s--", path);
+									ERROR_THINLINC("Unknow keymaps file : %s", path);
 									free(path);
 									return -1;
 								}
 								free(path);
+								yylineno = 1;
 								yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
 								BEGIN(INITIAL);
 							}
-map.*\n	 					{ /* Skip map for the moment */ }
+map		 					{ BEGIN(MAP); }
+<MAP>[[:space:]]+			{ /* skip spaces */ }
+<MAP>0(x|X)[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return LAYOUT; }
 sequence.*\n				{ /* Skip sequence for the moment */ }
 ^[[:alnum:]_]+				{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); return KEYS_KEYSYM; }
 <KEYS>[[:space:]]+			{ /* skip spaces */ }
-<KEYS>0x[[:alnum:]]+$		{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
-<KEYS>0x[[:alnum:]]+		{ sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
+<KEYS>0(x|X)[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
+<KEYS>0(x|X)[[:alnum:]]+	{ sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
 <KEYS>[[:alpha:]]+			{ setModifiers(&modifiers, yytext); }
 <KEYS>[[:alpha:]]+$			{ BEGIN(INITIAL); setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; return KEYS_MODIFIERS; }
-<KEYS>\n					{ /* skip newline */ }
 <KEYS>.						{ /* skip unknown */ }
-\n							{ /* skip newline */ }
-.							{ /* skip unknown */ }
+<*>\n						{ /* skip newline */ }
+<*>.						{ printf("Unknown : %c\n", yytext[0]); /* skip unknown */ }
 <<EOF>>						{
 								yypop_buffer_state();
+								yylineno = 1;
 								if (!YY_CURRENT_BUFFER)
 									yyterminate();
 							}
