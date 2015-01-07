@@ -54,7 +54,7 @@ struct list_keymap
 {
 	UINT32 keysym;
 	UINT32 modifiers;
-	DWORD rdpscancode;
+	BYTE rdpscancode;
 #ifdef WITH_DEBUG_THINLINC
 	char  *keyname;
 #endif
@@ -63,7 +63,8 @@ struct list_keymap
 typedef struct list_keymap tlkeymap;
 
 int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId);
-int thinlinc_add_keys(char *keyname, DWORD rdp_scancode, UINT32 modifiers);
+void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers);
+void thinlinc_set_keyboard_layout(DWORD layout, DWORD *keyboardLayoutId);
 tlkeymap *freerdp_keyboard_get_rdp_scancode_from_thinlinc(KeySym keysym);
 char *thinlinc_get_keymaps_path(char *p);
 UINT32 thinlinc_get_remote_modifiers_state();
