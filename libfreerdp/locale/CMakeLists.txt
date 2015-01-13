@@ -42,6 +42,8 @@ set(${MODULE_PREFIX}_SUN_SRCS
 set(${MODULE_PREFIX}_THINLINC_SRCS
 	keyboard_thinlinc.c
 	keyboard_thinlinc.h
+	kbd_thinlinc_layout.h
+	kbd_thinlinc_layout.c
 	locale.c
 	)
 
