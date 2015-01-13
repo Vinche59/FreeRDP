@@ -146,25 +146,42 @@ void thinlinc_handle_remote_modifiers_state(xfContext *xfc, UINT32 keysym, UINT3
 void xf_keyboard_send_key_thinlinc(xfContext *xfc, BOOL down, KeySym keysym)
 {
 	tlkeymap *keymap = NULL;
+	thinlinc_key *key = NULL;
+	thinlinc_sequence *sequence = NULL;
 	rdpInput* input = xfc->instance->input;
 
-	keymap = freerdp_keyboard_get_rdp_scancode_from_thinlinc(keysym);
+	if (!(keymap = freerdp_keyboard_get_rdp_scancode_from_thinlinc(keysym)))
+		return;
 
-	DEBUG_THINLINC("Send %s : keyname = %s - keysym = 0x%x - Scancode = 0x%x - Modifiers = 0x%x // Remote Modifiers = 0x%x", down ? "KEY_PRESSED":"KEY_RELEASED", keymap->keyname, keymap->keysym, keymap->rdpscancode, keymap->modifiers, thinlinc_get_remote_modifiers_state());
+	key = keymap->key;
+	sequence = keymap->sequence;
 
-	if (!keymap || keymap->rdpscancode == RDP_SCANCODE_UNKNOWN || (keymap->modifiers & INHIBIT_MODIFIER))
+	DEBUG_THINLINC("Send %s : keyname = %s - keysym = 0x%x - Scancode = 0x%x - Modifiers = 0x%x // Remote Modifiers = 0x%x", down ? "KEY_PRESSED":"KEY_RELEASED", key->keyname, key->keysym, key->rdpscancode, key->modifiers, thinlinc_get_remote_modifiers_state());
+
+	if (key != NULL)
 	{
+		if (key->rdpscancode == RDP_SCANCODE_UNKNOWN || (key->modifiers & INHIBIT_MODIFIER))
+		{
+			return;
+		}
+		if (!thinlinc_is_modifiers(key->keysym))
+			thinlinc_set_saved_remote_modifiers_state();
+		thinlinc_handle_remote_modifiers_state(xfc, key->keysym, key->modifiers, down);
+		thinlinc_send_keyboard_event(input, down, key->keysym, key->rdpscancode);
+		thinlinc_handle_remote_modifiers_state(xfc, key->keysym, thinlinc_get_saved_remote_modifiers_state(), down);
 		return;
 	}
-	else
+	else if (sequence != NULL)
 	{
-
-		if (!thinlinc_is_modifiers(keymap->keysym))
-			thinlinc_set_saved_remote_modifiers_state();
-		thinlinc_handle_remote_modifiers_state(xfc, keymap->keysym, keymap->modifiers, down);
-		thinlinc_send_keyboard_event(input, down, keymap->keysym, keymap->rdpscancode);
-		thinlinc_handle_remote_modifiers_state(xfc, keymap->keysym, thinlinc_get_saved_remote_modifiers_state(), down);
-		DEBUG_THINLINC("\n");
+		if (down)
+		{
+			do
+			{
+				xf_keyboard_send_key_thinlinc(xfc, TRUE, sequence->key->keysym);
+				xf_keyboard_send_key_thinlinc(xfc, FALSE, sequence->key->keysym);
+				sequence = sequence->next_key;
+			} while (sequence != NULL);
+		}
 	}
 }
 

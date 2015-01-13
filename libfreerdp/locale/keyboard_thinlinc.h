@@ -49,17 +49,32 @@
 #define INHIBIT_MODIFIER 0x00010000
 #define ADDUPPER_MODIFIER 0x00100000
 
-
-struct list_keymap
+struct _thinlinc_key
 {
 	UINT32 keysym;
 	UINT32 modifiers;
 	BYTE rdpscancode;
-#ifdef WITH_DEBUG_THINLINC
-	char  *keyname;
-#endif
+	#ifdef WITH_DEBUG_THINLINC
+		char  *keyname;
+	#endif
 };
+typedef struct _thinlinc_key thinlinc_key;
 
+struct _thinlinc_sequence
+{
+	thinlinc_key *key;
+	struct _thinlinc_sequence *next_key;
+};
+typedef struct _thinlinc_sequence thinlinc_sequence;
+
+/**
+ * A key is a unique key OR a sequence of keys
+ */
+struct list_keymap
+{
+	thinlinc_key *key;
+	thinlinc_sequence *sequence;
+};
 typedef struct list_keymap tlkeymap;
 
 int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId);

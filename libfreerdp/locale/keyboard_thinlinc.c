@@ -2,7 +2,7 @@
  * FreeRDP: A Remote Desktop Protocol Implementation
  * X11 Keyboard Mapping in ThinLinc Environment
  *
- * Copyright 2014 Vincent Sourin <sourin-v@bridgestone-bae.com>
+ * Copyright 2014-2015 Vincent Sourin <sourin-v@bridgestone-bae.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
 #include <freerdp/locale/locale.h>
 #include <freerdp/scancode.h>
 #include <ctype.h>
+#include <dirent.h>
+#include "kbd_thinlinc_layout.h"
 #include "keyboard_thinlinc_parser.h"
 #include "keyboard_thinlinc.h"
 #include "liblocale.h"
@@ -55,7 +57,7 @@ void thinlinc_set_keyboard_layout(DWORD layout, DWORD *keyboardLayoutId)
 void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers)
 {
 	int rc_int = 0;
-	KeySym index = XStringToKeysym(keyname);;
+	KeySym index = XStringToKeysym(keyname);
 	Word_t *PValue = NULL;
 	tlkeymap *newKey = NULL;
 
@@ -85,15 +87,17 @@ void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers)
 	}
 	else
 	{
-		newKey = calloc(1, sizeof(struct list_keymap));
-		newKey->keysym = index;
+		newKey = calloc(1, sizeof(tlkeymap));
+		newKey->sequence = NULL;
+		newKey->key = calloc(1, sizeof(thinlinc_key));
+		newKey->key->keysym = index;
 		if (modifiers & ADDUPPER_MODIFIER)
-			newKey->modifiers = modifiers & ~ADDUPPER_MODIFIER;
+			newKey->key->modifiers = modifiers & ~ADDUPPER_MODIFIER;
 		else
-			newKey->modifiers = modifiers;
-		newKey->rdpscancode = rdp_scancode;
+			newKey->key->modifiers = modifiers;
+		newKey->key->rdpscancode = rdp_scancode;
 #ifdef WITH_DEBUG_THINLINC
-		newKey->keyname = strdup(keyname);
+		newKey->key->keyname = strdup(keyname);
 #endif
 		*PValue = (Word_t) newKey;
 	}
@@ -144,15 +148,23 @@ int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId)
 {
 	char *locale = NULL;
 	char *path = NULL;
+	int i = 0;
 #ifdef WITH_DEBUG_THINLINC
 	Word_t *PValue = NULL;
 	Word_t index = -1;
 	tlkeymap *iter = NULL;
 #endif
 
-	printf("KeyboardLayoutId : 0x%08x\n", *keyboardLayoutId);
+	if (*keyboardLayoutId != 0) {
+		locale = find_thinlinc_keymap_for_keyboard_layout(*keyboardLayoutId);
+	}
 
-	locale = freerdp_get_system_locale_thinlinc();
+	if (!locale) {
+		if(*keyboardLayoutId != 0)
+			ERROR_THINLINC("Cannot find keymap for layout Id : 0x%x. Trying with system locale.", *keyboardLayoutId);
+		locale = freerdp_get_system_locale_thinlinc();
+	}
+
 	if (locale != NULL) {
 		DEBUG_THINLINC("Locale found : %s", locale);
 		path = thinlinc_get_keymaps_path(locale);
@@ -164,37 +176,50 @@ int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId)
 		yyin = fopen(path, "r");
 		if (!yyin)
 		{
-			ERROR_THINLINC("Error while opening keymaps file : %s", path);
-			free(locale);
+			ERROR_THINLINC("Error while opening keymaps file : %s.", path);
 			free(path);
-			return -1;
-		}
-		else
-		{
-			if (yyparse(keyboardLayoutId))
+			for (i = 0; i < strlen(locale); i++)
 			{
+				if (locale[i] == '-')
+				{
+					locale[i] = '\0';
+					break;
+				}
+			}
+			path = thinlinc_get_keymaps_path(locale);
+			ERROR_THINLINC("Trying with keymaps file : %s", path);
+			yyin = fopen(path, "r");
+			if (!yyin)
+			{
+				ERROR_THINLINC("Error while opening keymaps file : %s.", path);
 				free(locale);
 				free(path);
 				return -1;
 			}
-#ifdef WITH_DEBUG_THINLINC
-			JLL(PValue, keymaps, index);
-			while (PValue != NULL)
-			{
-				iter = ((tlkeymap *) (*PValue));
-				DEBUG_THINLINC("KeySym : 0x%x - Modifiers : 0x%x - RDP ScanCode : 0x%x", iter->keysym, iter->modifiers, iter->rdpscancode);
-				JLP(PValue, keymaps, index);
-			}
-#endif
+		}
+		if (yyparse(keyboardLayoutId))
+		{
 			free(locale);
 			free(path);
+			return -1;
 		}
+#ifdef WITH_DEBUG_THINLINC
+		JLL(PValue, keymaps, index);
+		while (PValue != NULL)
+		{
+			iter = ((tlkeymap *) (*PValue));
+			if (iter->key != NULL)
+				DEBUG_THINLINC("KeySym : 0x%x - Modifiers : 0x%x - RDP ScanCode : 0x%x", iter->key->keysym, iter->key->modifiers, iter->key->rdpscancode);
+			JLP(PValue, keymaps, index);
+		}
+#endif
+		free(locale);
+		free(path);
 	}
 	else
 		return -1;
 
 	thinlincKeyboardReady = TRUE;
-	printf("KeyboardLayoutId : 0x%x\n", *keyboardLayoutId);
 	return 1;
 }
 

@@ -17,9 +17,9 @@
 # limitations under the License.
 #=============================================================================
 
-find_path(THINLINC_DIR NAMES tl-config
-	PATHS $ENV{TL_PREFIX}/bin/
-          DOC "Thinlinc keymaps directory"
+find_path(THINLINC_DIR NAMES thinlinc-release
+	PATHS $ENV{TL_PREFIX}/etc/
+	DOC "Thinlinc Install Directory"
 )
 
 set(THINLINC_MSG "Thinlinc Install directory not found")

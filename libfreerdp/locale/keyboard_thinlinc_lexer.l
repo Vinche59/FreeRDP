@@ -35,47 +35,54 @@ void setModifiers(unsigned int *modifiers, char *str);
 %x INCLUDE
 %x MAP
 %%
-^[[:space:]]				{ /* Skip space beginning of line */ }
-#.*\n						{ /* Skip comments */ }
-include						{ BEGIN(INCLUDE); }
-<INCLUDE>[[:space:]]+		{ /* skip spaces */ }
-<INCLUDE>[^[:space:]\n]+	{ 
-								char *path = thinlinc_get_keymaps_path(yytext);
-								if (!path) 
-								{
-									return -1;
-								}
-								yyin = fopen(path, "r");
-								if (!yyin) 
-								{
-									ERROR_THINLINC("Unknow keymaps file : %s", path);
-									free(path);
-									return -1;
-								}
-								free(path);
-								yylineno = 1;
-								yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
-								BEGIN(INITIAL);
-							}
-map		 					{ BEGIN(MAP); }
-<MAP>[[:space:]]+			{ /* skip spaces */ }
-<MAP>0(x|X)[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return LAYOUT; }
-sequence.*\n				{ /* Skip sequence for the moment */ }
-^[[:alnum:]_]+				{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); return KEYS_KEYSYM; }
-<KEYS>[[:space:]]+			{ /* skip spaces */ }
-<KEYS>0(x|X)[[:alnum:]]+$	{ BEGIN(INITIAL); sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
-<KEYS>0(x|X)[[:alnum:]]+	{ sscanf(yytext, "%i", &yylval.uiVal); return KEYS_SCANCODE; }
-<KEYS>[[:alpha:]]+			{ setModifiers(&modifiers, yytext); }
-<KEYS>[[:alpha:]]+$			{ BEGIN(INITIAL); setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; return KEYS_MODIFIERS; }
-<KEYS>.						{ /* skip unknown */ }
-<*>\n						{ /* skip newline */ }
-<*>.						{ printf("Unknown : %c\n", yytext[0]); /* skip unknown */ }
-<<EOF>>						{
-								yypop_buffer_state();
-								yylineno = 1;
-								if (!YY_CURRENT_BUFFER)
-									yyterminate();
-							}
+^[[:space:]]						{ /* Skip space beginning of line */ printf("Skip space beginning of line\n"); }
+#.*\n								{ /* Skip comments */ printf("Skip comments\n");}
+include								{ BEGIN(INCLUDE); printf("INCLUDE\n");}
+<INCLUDE>[[:space:]]+				{ /* skip spaces */ printf("Skip space INCLUDE\n"); }
+<INCLUDE>[^[:space:]\n]+			{ 
+										char *path = thinlinc_get_keymaps_path(yytext);
+										if (!path) 
+										{
+											return -1;
+										}
+										yyin = fopen(path, "r");
+										if (!yyin) 
+										{
+											ERROR_THINLINC("Unknow keymaps file : %s", path);
+											free(path);
+											return -1;
+										}
+										DEBUG_THINLINC("Parsing file : %s", path);
+										printf("Parsing file : %s\n", path);
+										free(path);
+										yylineno = 1;
+										yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+										BEGIN(INITIAL);
+									}
+map				 					{ BEGIN(MAP); printf("MAP\n");}
+<MAP>\n								{ BEGIN(INITIAL); printf("END OF MAP\n");}
+<MAP>[[:space:]]+					{ /* skip spaces */ printf("Skip space MAP\n");}
+<MAP>0(x|X)[[:alnum:]]+				{ sscanf(yytext, "%i", &yylval.uiVal); printf("MAP LAYOUT : --%s--\n", yytext); return LAYOUT; }
+sequence							{ BEGIN(SEQUENCE); printf("SEQUENCE\n"); }
+<SEQUENCE>\n						{ BEGIN(INITIAL); printf("END OF SEQUENCE\n"); }
+<SEQUENCE>[[:space:]]+$				{ /* skip spaces */ BEGIN(INITIAL); printf("Skip space SEQUENCE\n");}
+<SEQUENCE>[[:space:]]+				{ /* skip spaces */ }
+<SEQUENCE>[[:alnum:]_]+				
+[[:alnum:]_]+						{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); printf("KEYSYM : --%s-- ", yytext); return KEYS_KEYSYM; }
+<KEYS>\n							{ BEGIN(INITIAL); printf("END OF KEYS\n"); }
+<KEYS>[[:space:]]+$					{ /* skip spaces */ BEGIN(INITIAL); printf("Skip space KEYS\n");}
+<KEYS>[[:space:]]+					{ /* skip spaces */ }
+<KEYS>0(x|X)[[:alnum:]]+			{ sscanf(yytext, "%i", &yylval.uiVal); printf("SCANCODE : --%s-- ", yytext); return KEYS_SCANCODE; }
+<KEYS>[[:alpha:]]+					{ setModifiers(&modifiers, yytext); printf("MODIFIERS 1 : --%s-- ", yytext); }
+<KEYS>[[:alpha:]]+$					{ setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; printf("MODIFIERS 2 : --%s--\n", yytext); return KEYS_MODIFIERS; }
+<KEYS>.								{ /* skip unknown */ printf("Skip unknown KEYS : --%s--\n", yytext);}
+.									{ /* skip unknown */ printf("Skip unknown : --%s--\n", yytext);}
+<<EOF>>								{
+										yypop_buffer_state();
+										yylineno = 1;
+										if (!YY_CURRENT_BUFFER)
+											yyterminate();
+									}
 %%
 
 void setModifiers(unsigned int *modifiers, char *str)
@@ -110,6 +117,6 @@ void setModifiers(unsigned int *modifiers, char *str)
 		*modifiers |= INHIBIT_MODIFIER;
 		return;
 	}
-	ERROR_THINLINC("Modifier Unknown : %s", str);	
+	ERROR_THINLINC("Modifier Unknown : --%s--", str);	
 }
 
