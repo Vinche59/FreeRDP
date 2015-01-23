@@ -3,7 +3,7 @@
  * FreeRDP: A Remote Desktop Protocol Implementation
  * X11 Keyboard Mapping in ThinLinc Environment
  *
- * Copyright 2014 Vincent Sourin <sourin-v@bridgestone-bae.com>
+ * Copyright 2014-2015 Vincent Sourin <sourin-v@bridgestone-bae.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
+ * 
  */
 #include <stdio.h>
 #include "keyboard_thinlinc.h"
 #include "keyboard_thinlinc_parser.h"
 #define YY_DECL int yylex()
+
 unsigned int modifiers;
+char *sequence_keysym = 0;
 void setModifiers(unsigned int *modifiers, char *str);
 %}
 
@@ -31,7 +34,8 @@ void setModifiers(unsigned int *modifiers, char *str);
 %option yylineno
 
 %x KEYS
-%x SEQUENCE
+%x SEQ
+%x SEQ_KEYS
 %x INCLUDE
 %x MAP
 %%
@@ -59,24 +63,31 @@ include								{ BEGIN(INCLUDE); printf("INCLUDE\n");}
 										yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
 										BEGIN(INITIAL);
 									}
-map				 					{ BEGIN(MAP); printf("MAP\n");}
-<MAP>\n								{ BEGIN(INITIAL); printf("END OF MAP\n");}
-<MAP>[[:space:]]+					{ /* skip spaces */ printf("Skip space MAP\n");}
+map				 					{ BEGIN(MAP); printf("MAP\n"); }
+<MAP>\n								{ BEGIN(INITIAL); printf("END OF MAP\n"); }
+<MAP>[[:space:]]+					{ /* skip spaces */ printf("Skip space MAP\n"); }
 <MAP>0(x|X)[[:alnum:]]+				{ sscanf(yytext, "%i", &yylval.uiVal); printf("MAP LAYOUT : --%s--\n", yytext); return LAYOUT; }
-sequence							{ BEGIN(SEQUENCE); printf("SEQUENCE\n"); }
-<SEQUENCE>\n						{ BEGIN(INITIAL); printf("END OF SEQUENCE\n"); }
-<SEQUENCE>[[:space:]]+$				{ /* skip spaces */ BEGIN(INITIAL); printf("Skip space SEQUENCE\n");}
-<SEQUENCE>[[:space:]]+				{ /* skip spaces */ }
-<SEQUENCE>[[:alnum:]_]+				
+sequence							{ BEGIN(SEQ); printf("SEQ\n"); }
+<SEQ,SEQ_KEYS>[[:space:]+$\n]		{ 
+										printf("SEQ END\n"); 
+										if (sequence_keysym != 0)
+										{ 
+											free(sequence_keysym);
+											sequence_keysym = 0;
+										}
+										BEGIN(INITIAL);
+									}
+<SEQ,SEQ_KEYS>[[:space:]]+			{ /* skip spaces */ }
+<SEQ>[[:alnum:]_]+					{ BEGIN(SEQ_KEYS); sequence_keysym = strdup(yytext); yylval.str = strdup(yytext); return SEQUENCE_KEYSYM; }
+<SEQ_KEYS>[[:alnum:]_]+				{ yylval.str = strdup(yytext); return SEQUENCE_KEY; }
 [[:alnum:]_]+						{ BEGIN(KEYS); modifiers = 0; yylval.str = strdup(yytext); printf("KEYSYM : --%s-- ", yytext); return KEYS_KEYSYM; }
-<KEYS>\n							{ BEGIN(INITIAL); printf("END OF KEYS\n"); }
-<KEYS>[[:space:]]+$					{ /* skip spaces */ BEGIN(INITIAL); printf("Skip space KEYS\n");}
+<KEYS>[[:space:]+$\n]				{ BEGIN(INITIAL); printf("END OF KEYS\n"); }
 <KEYS>[[:space:]]+					{ /* skip spaces */ }
 <KEYS>0(x|X)[[:alnum:]]+			{ sscanf(yytext, "%i", &yylval.uiVal); printf("SCANCODE : --%s-- ", yytext); return KEYS_SCANCODE; }
 <KEYS>[[:alpha:]]+					{ setModifiers(&modifiers, yytext); printf("MODIFIERS 1 : --%s-- ", yytext); }
 <KEYS>[[:alpha:]]+$					{ setModifiers(&modifiers, yytext); yylval.uiVal = modifiers; printf("MODIFIERS 2 : --%s--\n", yytext); return KEYS_MODIFIERS; }
-<KEYS>.								{ /* skip unknown */ printf("Skip unknown KEYS : --%s--\n", yytext);}
-.									{ /* skip unknown */ printf("Skip unknown : --%s--\n", yytext);}
+<KEYS>.								{ /* skip unknown */ printf("Skip unknown KEYS : --%s--\n", yytext); }
+.									{ /* skip unknown */ printf("Skip unknown : --%s--\n", yytext); }
 <<EOF>>								{
 										yypop_buffer_state();
 										yylineno = 1;

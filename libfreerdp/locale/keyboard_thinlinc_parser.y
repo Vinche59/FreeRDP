@@ -3,7 +3,7 @@
  * FreeRDP: A Remote Desktop Protocol Implementation
  * X11 Keyboard Mapping in ThinLinc Environment
  *
- * Copyright 2014 Vincent Sourin <sourin-v@bridgestone-bae.com>
+ * Copyright 2014-2015 Vincent Sourin <sourin-v@bridgestone-bae.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 
 extern int yylex();
 extern int yylineno;
+char *sequence_keysym;
 int yyerror(DWORD *keyboardLayoutId, const char *s);
 
 %}
@@ -30,6 +31,7 @@ int yyerror(DWORD *keyboardLayoutId, const char *s);
 %parse-param {DWORD *keyboardLayoutId}
 %define parse.error verbose
 %locations
+
 %union {
 	unsigned int uiVal;
 	char *str;
@@ -39,20 +41,28 @@ int yyerror(DWORD *keyboardLayoutId, const char *s);
 %token KEYS_SCANCODE
 %token KEYS_MODIFIERS
 %token LAYOUT
+%token SEQUENCE_KEYSYM;
+%token SEQUENCE_KEY;
 
-%type <str> KEYS_KEYSYM 
+%type <str> KEYS_KEYSYM SEQUENCE_KEYSYM SEQUENCE_KEY
 %type <uiVal> KEYS_SCANCODE KEYS_MODIFIERS LAYOUT
 
 %start keymap
 %%
 
 keymap : key
+	| sequence
+	| keymap sequence
 	| keymap key
 	;
 
 key: LAYOUT { thinlinc_set_keyboard_layout($1, keyboardLayoutId); }
 	| KEYS_KEYSYM KEYS_SCANCODE KEYS_MODIFIERS { thinlinc_add_keys($1, $2, $3); }
 	| KEYS_KEYSYM KEYS_SCANCODE { thinlinc_add_keys($1, $2, 0); }
+	;
+	
+sequence: SEQUENCE_KEYSYM { thinlinc_create_sequence($1); }
+	| SEQUENCE_KEY { thinlinc_add_key_to_sequence(sequence_keysym, $1); }
 	;
 
 %%

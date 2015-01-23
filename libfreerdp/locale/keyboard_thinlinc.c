@@ -54,15 +54,64 @@ void thinlinc_set_keyboard_layout(DWORD layout, DWORD *keyboardLayoutId)
 	*keyboardLayoutId = layout;
 }
 
+void thinlinc_create_sequence(char *keyname)
+{
+	int rc_int = 0;
+	KeySym index = NoSymbol;
+	Word_t *PValue = NULL;
+	tlkeymap *newKey = NULL;
+
+	DEBUG_THINLINC("Create Sequence for : %s", keyname);
+
+	index = XStringToKeysym(keyname);
+	if (index == NoSymbol)
+	{
+		ERROR_THINLINC("No Symbol for keysym : %s", keyname);
+		free(keyname);
+		return;
+	}
+	if (keymaps != NULL)
+	{
+		JLD(rc_int, keymaps, index);
+		if (rc_int == JERR)
+		{
+			free(keyname);
+			ERROR_THINLINC("Error while removing index %i from keymaps array", index);
+			return;
+		}
+	}
+
+	JLI(PValue, keymaps, index);
+	if (PValue == PJERR)
+	{
+		ERROR_THINLINC("Error while inserting index %i in keymaps array", index);
+	}
+	else
+	{
+		newKey = calloc(1, sizeof(tlkeymap));
+		newKey->key = NULL;
+		dsa
+		*PValue = (Word_t) newKey;
+	}
+
+	free(keyname);
+}
+
+void thinlinc_add_key_to_sequence(char *index, char *keyname)
+{
+
+}
+
 void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers)
 {
 	int rc_int = 0;
-	KeySym index = XStringToKeysym(keyname);
+	KeySym index = NoSymbol;
 	Word_t *PValue = NULL;
 	tlkeymap *newKey = NULL;
 
 	DEBUG_THINLINC("Add keys : %s - 0x%x - 0x%x", keyname, rdp_scancode, modifiers);
 
+	index = XStringToKeysym(keyname);
 	if (index == NoSymbol)
 	{
 		ERROR_THINLINC("No Symbol for keysym : %s", keyname);
