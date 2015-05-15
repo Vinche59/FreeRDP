@@ -2,7 +2,11 @@
  * FreeRDP: A Remote Desktop Protocol Implementation
  * X11 Keyboard Mapping in ThinLinc Environment
  *
+<<<<<<< HEAD
  * Copyright 2014-2015 Vincent Sourin <sourin-v@bridgestone-bae.com>
+=======
+ * Copyright 2014 Vincent Sourin <sourin-v@bridgestone-bae.com>
+>>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +66,11 @@ typedef struct _thinlinc_key thinlinc_key;
 
 struct _thinlinc_sequence
 {
+<<<<<<< HEAD
 	UINT32 keysym;
+=======
+	thinlinc_key *key;
+>>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
 	struct _thinlinc_sequence *next_key;
 };
 typedef struct _thinlinc_sequence thinlinc_sequence;
@@ -78,8 +86,11 @@ struct list_keymap
 typedef struct list_keymap tlkeymap;
 
 int freerdp_keyboard_init_thinlinc(DWORD *keyboardLayoutId);
+<<<<<<< HEAD
 void thinlinc_create_sequence(char *keyname);
 void thinlinc_add_key_to_sequence(char *index, char *keyname);
+=======
+>>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
 void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers);
 void thinlinc_set_keyboard_layout(DWORD layout, DWORD *keyboardLayoutId);
 tlkeymap *freerdp_keyboard_get_rdp_scancode_from_thinlinc(KeySym keysym);

@@ -2,7 +2,11 @@
  * FreeRDP: A Remote Desktop Protocol Implementation
  * X11 Keyboard Mapping in ThinLinc Environment
  *
+<<<<<<< HEAD
  * Copyright 2014-2015 Vincent Sourin <sourin-v@bridgestone-bae.com>
+=======
+ * Copyright 2014 Vincent Sourin <sourin-v@bridgestone-bae.com>
+>>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,8 +181,13 @@ void xf_keyboard_send_key_thinlinc(xfContext *xfc, BOOL down, KeySym keysym)
 		{
 			do
 			{
+<<<<<<< HEAD
 				xf_keyboard_send_key_thinlinc(xfc, TRUE, sequence->keysym);
 				xf_keyboard_send_key_thinlinc(xfc, FALSE, sequence->keysym);
+=======
+				xf_keyboard_send_key_thinlinc(xfc, TRUE, sequence->key->keysym);
+				xf_keyboard_send_key_thinlinc(xfc, FALSE, sequence->key->keysym);
+>>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
 				sequence = sequence->next_key;
 			} while (sequence != NULL);
 		}
