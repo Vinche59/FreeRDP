@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #define JUDYERROR_NOTEST 1
+
 #include <Judy.h>
 #include <freerdp/locale/locale.h>
 #include <freerdp/scancode.h>
@@ -54,7 +55,7 @@ void thinlinc_set_keyboard_layout(DWORD layout, DWORD *keyboardLayoutId)
 	*keyboardLayoutId = layout;
 }
 
-<<<<<<< HEAD
+
 void thinlinc_create_sequence(char *keyname)
 {
 	int rc_int = 0;
@@ -107,21 +108,12 @@ void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers)
 {
 	int rc_int = 0;
 	KeySym index = NoSymbol;
-=======
-void thinlinc_add_keys(char *keyname, BYTE rdp_scancode, UINT32 modifiers)
-{
-	int rc_int = 0;
-	KeySym index = XStringToKeysym(keyname);
->>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
 	Word_t *PValue = NULL;
 	tlkeymap *newKey = NULL;
 
 	DEBUG_THINLINC("Add keys : %s - 0x%x - 0x%x", keyname, rdp_scancode, modifiers);
 
-<<<<<<< HEAD
 	index = XStringToKeysym(keyname);
-=======
->>>>>>> 50de0f93ea5a05dc5262053f15988c56875c62a4
 	if (index == NoSymbol)
 	{
 		ERROR_THINLINC("No Symbol for keysym : %s", keyname);
