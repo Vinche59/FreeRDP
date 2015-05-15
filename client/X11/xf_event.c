@@ -36,6 +36,11 @@
 #include "xf_event.h"
 #include "xf_input.h"
 
+#ifdef WITH_THINLINC
+#include "xf_keyboard_thinlinc.h"
+extern BOOL thinlincKeyboardReady;
+#endif
+
 #define TAG CLIENT_TAG("x11")
 
 #define CLAMP_COORDINATES(x, y) if (x < 0) x = 0; if (y < 0) y = 0
@@ -479,7 +484,14 @@ static BOOL xf_event_KeyPress(xfContext* xfc, XEvent* event, BOOL app)
 
 	XLookupString((XKeyEvent*) event, str, sizeof(str), &keysym, NULL);
 
+#ifdef WITH_THINLINC
+	if (thinlincKeyboardReady)
+		xf_keyboard_key_press_thinlinc(xfc, event->xkey.keycode, keysym);
+	else
+		xf_keyboard_key_press(xfc, event->xkey.keycode, keysym);
+#else
 	xf_keyboard_key_press(xfc, event->xkey.keycode, keysym);
+#endif
 
 	return TRUE;
 }
@@ -500,7 +512,19 @@ static BOOL xf_event_KeyRelease(xfContext* xfc, XEvent* event, BOOL app)
 		}
 	}
 
+#ifdef WITH_THINLINC
+	if (thinlincKeyboardReady)
+	{
+		KeySym keysym;
+		char str[256];
+		XLookupString((XKeyEvent*) event, str, sizeof(str), &keysym, NULL);
+		xf_keyboard_key_release_thinlinc(xfc, event->xkey.keycode, keysym);
+	}
+	else
+		xf_keyboard_key_release(xfc, event->xkey.keycode);
+#else
 	xf_keyboard_key_release(xfc, event->xkey.keycode);
+#endif
 
 	return TRUE;
 }

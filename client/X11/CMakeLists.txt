@@ -51,7 +51,13 @@ set(${MODULE_PREFIX}_SRCS
 	xf_window.c
 	xf_window.h
 	xf_client.c
-	xf_client.h)
+	xf_client.h
+	)
+
+if (WITH_THINLINC)
+	include_directories(${CMAKE_SOURCE_DIR}/libfreerdp)
+	set(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} xf_keyboard_thinlinc.h xf_keyboard_thinlinc.c)
+endif()
 
 if(WITH_CLIENT_INTERFACE)
 	if(CLIENT_INTERFACE_SHARED)
@@ -158,6 +164,8 @@ find_feature(Xv ${XV_FEATURE_TYPE} ${XV_FEATURE_PURPOSE} ${XV_FEATURE_DESCRIPTIO
 find_feature(Xi ${XI_FEATURE_TYPE} ${XI_FEATURE_PURPOSE} ${XI_FEATURE_DESCRIPTION})
 find_feature(Xrender ${XRENDER_FEATURE_TYPE} ${XRENDER_FEATURE_PURPOSE} ${XRENDER_FEATURE_DESCRIPTION})
 find_feature(Xfixes ${XFIXES_FEATURE_TYPE} ${XFIXES_FEATURE_PURPOSE} ${XFIXES_FEATURE_DESCRIPTION})
+
+
 
 if(WITH_XINERAMA)
 	add_definitions(-DWITH_XINERAMA)

@@ -40,6 +40,10 @@
 #include "keyboard_xkbfile.h"
 #endif
 
+#ifdef WITH_THINLINC
+#include "keyboard_thinlinc.h"
+#endif
+
 #endif
 
 DWORD VIRTUAL_SCANCODE_TO_X11_KEYCODE[256][2];
@@ -106,6 +110,16 @@ DWORD freerdp_keyboard_init(DWORD keyboardLayoutId)
 #endif
 
 #ifdef WITH_X11
+
+#ifdef WITH_THINLINC
+	if (status < 0)
+	{
+		if ((status = freerdp_keyboard_init_thinlinc(&keyboardLayoutId)) > 0)
+			return keyboardLayoutId;
+		else
+			ERROR_THINLINC("Error during initialization of keyboard. Revert to \"Standard\" FreeRDP detection. Keyboard may not be fully functionnal.");
+	}
+#endif
 
 #ifdef WITH_XKBFILE
 	if (status < 0)

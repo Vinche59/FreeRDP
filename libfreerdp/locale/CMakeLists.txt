@@ -39,6 +39,14 @@ set(${MODULE_PREFIX}_SUN_SRCS
 	keyboard_sun.c
 	keyboard_sun.h)
 
+set(${MODULE_PREFIX}_THINLINC_SRCS
+	keyboard_thinlinc.c
+	keyboard_thinlinc.h
+	kbd_thinlinc_layout.h
+	kbd_thinlinc_layout.c
+	locale.c
+	)
+
 if(CMAKE_SYSTEM_NAME MATCHES Solaris)
 	set(WITH_SUN true)
 endif()
@@ -52,6 +60,22 @@ if(WITH_X11)
 	if(WITH_SUN)
 		freerdp_definition_add(-DWITH_SUN)
 		set(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} ${${MODULE_PREFIX}_SUN_SRCS})
+	endif()
+
+	if(WITH_THINLINC)
+		find_package(BISON REQUIRED)
+		find_package(FLEX REQUIRED)
+		find_package(Judy REQUIRED)
+		include_directories(${CMAKE_CURRENT_BINARY_DIR})
+		include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+		bison_target(tlparser keyboard_thinlinc_parser.y ${CMAKE_CURRENT_BINARY_DIR}/keyboard_thinlinc_parser.c)
+		flex_target(tlscanner keyboard_thinlinc_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/keyboard_thinlinc_lexer.c)
+		ADD_FLEX_BISON_DEPENDENCY(tlscanner tlparser)
+		add_library(thinlinc STATIC ${${MODULE_PREFIX}_THINLINC_SRCS} ${FLEX_tlscanner_OUTPUTS} ${BISON_tlparser_OUTPUTS})
+		target_link_libraries(thinlinc ${FLEX_LIBRARIES} ${BISON_LIBRARIES} ${JUDY_LIBRARY} ${X11_LIBRARIES} winpr)
+		set_target_properties(thinlinc PROPERTIES COMPILE_DEFINITIONS "HAVE_CONFIG_H")
+		freerdp_library_add(thinlinc)
+		install(TARGETS thinlinc DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries EXPORT FreeRDPTargets)
 	endif()
 
 	set(XKBFILE_FEATURE_TYPE "RECOMMENDED")

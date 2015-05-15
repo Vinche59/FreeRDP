@@ -117,6 +117,7 @@ option(WITH_DEBUG_X11_LOCAL_MOVESIZE "Print X11 Client local movesize debug mess
 option(WITH_DEBUG_X11 "Print X11 Client debug messages" ${DEFAULT_DEBUG_OPTION})
 option(WITH_DEBUG_XV "Print XVideo debug messages" ${DEFAULT_DEBUG_OPTION})
 option(WITH_DEBUG_RINGBUFFER "Enable Ringbuffer debug messages" ${DEFAULT_DEBUG_OPTION})
+option(WITH_DEBUG_THINLINC "Print ThinLinc debug messages" ${DEFAULT_DEBUG_OPTION})
 
 if(ANDROID)
 include(ConfigOptionsAndroid)

@@ -59,6 +59,7 @@
 #cmakedefine WITH_IOSAUDIO
 #cmakedefine WITH_OPENSLES
 #cmakedefine WITH_GSM
+#cmakedefine WITH_THINLINC
 
 /* Plugins */
 #cmakedefine STATIC_CHANNELS
@@ -99,4 +100,5 @@
 #cmakedefine WITH_DEBUG_XV
 #cmakedefine WITH_DEBUG_ANDROID_JNI
 #cmakedefine WITH_DEBUG_RINGBUFFER
+#cmakedefine WITH_DEBUG_THINLINC
 #endif

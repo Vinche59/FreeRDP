@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 
 #include <winpr/crt.h>
@@ -715,6 +716,74 @@ const char* freerdp_get_system_locale_name_from_id(DWORD localeId)
 	}
 
 	return NULL;
+}
+
+char *toLower(char *s)
+{
+	int l = strlen(s);
+	char *str = calloc(l + 1, sizeof(char));
+	int i = 0;
+
+	if (!str)
+		return NULL;
+
+	for (i = 0; i < l; i++)
+		str[i] = tolower(s[i]);
+	str[l] = '\0';
+
+	return str;
+}
+
+char *locale_to_thinlinc_keymapName(SYSTEM_LOCALE* locale)
+{
+	char *str = NULL;
+	char *loc = NULL;
+
+	if (!locale)
+		return NULL;
+
+	loc = calloc(strlen(locale->language) + strlen(locale->country) + 2, sizeof(char));
+	if (!loc)
+		return NULL;
+	str=toLower(locale->language);
+	if(!str)
+	{
+		free(loc);
+		return NULL;
+	}
+	loc = strcpy(loc, str);
+	free(str);
+	loc = strcat(loc, "-");
+	str=toLower(locale->country);
+	if(!str)
+	{
+		free(loc);
+		return NULL;
+	}
+	loc = strcat(loc, str);
+	free(str);
+
+	return loc;
+}
+
+char *freerdp_get_system_locale_thinlinc()
+{
+	char language[4];
+	char country[10];
+	char *loc = NULL;
+
+	freerdp_get_system_language_and_country_codes(language, country);
+
+	if ((strcmp(language, "C") == 0) || (strcmp(language, "POSIX") == 0))
+	{
+		loc = calloc(6, sizeof(char));
+		if (!loc)
+			return NULL;
+		strcpy(loc, "en-us");
+		return loc;
+	}
+
+	return locale_to_thinlinc_keymapName(freerdp_detect_system_locale());
 }
 
 int freerdp_detect_keyboard_layout_from_system_locale(DWORD* keyboardLayoutId)
